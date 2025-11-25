@@ -96,12 +96,6 @@ export default function LoginPage() {
                   {loading ? 'Entrando...' : 'Entrar'}
                 </button>
               </form>
-
-              <div className="mt-4 text-center">
-                <small className="text-muted">
-                  Usuário teste: admin@admin.com / admin
-                </small>
-              </div>
             </div>
           </div>
         </div>
