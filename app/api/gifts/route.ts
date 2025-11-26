@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireAdmin } from '@/lib/auth';
 
-// Listar presentes do usuário logado
-export async function GET() {
+// Listar presentes do usuário logado ou de outro usuário (admin only)
+export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth();
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
 
+    // Se userId for fornecido, apenas admin pode ver presentes de outros
+    if (userId && userId !== user.id) {
+      await requireAdmin();
+      
+      const result = await sql`
+        SELECT id, name, url, description, created_at
+        FROM gifts
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+      `;
+      
+      return NextResponse.json({ gifts: result.rows });
+    }
+
+    // Usuário vendo seus próprios presentes
     const result = await sql`
       SELECT id, name, url, description, created_at
       FROM gifts
@@ -18,7 +35,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('Get gifts error:', error);
     
-    if (error.message === 'Unauthorized') {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') {
       return NextResponse.json(
         { error: 'Não autorizado' },
         { status: 401 }

@@ -19,6 +19,13 @@ interface DrawResult {
   receiver_name: string;
 }
 
+interface Gift {
+  id: string;
+  name: string;
+  url: string | null;
+  description: string | null;
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +33,10 @@ export default function AdminPage() {
   const [showResults, setShowResults] = useState(false);
   const [drawResults, setDrawResults] = useState<DrawResult[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [showGiftsModal, setShowGiftsModal] = useState(false);
+  const [selectedUserGifts, setSelectedUserGifts] = useState<Gift[]>([]);
+  const [selectedUserName, setSelectedUserName] = useState('');
+  const [loadingGifts, setLoadingGifts] = useState(false);
   const router = useRouter();
 
   // Form states
@@ -227,6 +238,23 @@ export default function AdminPage() {
     }
   };
 
+  const loadUserGifts = async (userId: string, userName: string) => {
+    setLoadingGifts(true);
+    setSelectedUserName(userName);
+    setShowGiftsModal(true);
+    
+    try {
+      const res = await fetch(`/api/gifts?userId=${userId}`);
+      const data = await res.json();
+      setSelectedUserGifts(data.gifts || []);
+    } catch (err) {
+      console.error('Erro ao carregar presentes:', err);
+      setSelectedUserGifts([]);
+    } finally {
+      setLoadingGifts(false);
+    }
+  };
+
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/');
@@ -421,7 +449,12 @@ export default function AdminPage() {
                           </td>
                           <td>
                             {user.gifts_count > 0 ? (
-                              <span className="badge bg-info text-dark">
+                              <span 
+                                className="badge bg-info text-dark" 
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => loadUserGifts(user.id, user.name)}
+                                title="Clique para ver os presentes"
+                              >
                                 🎁 {user.gifts_count}
                               </span>
                             ) : (
@@ -527,6 +560,69 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de Presentes */}
+      {showGiftsModal && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">🎁 Presentes de {selectedUserName}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowGiftsModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {loadingGifts ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Carregando...</span>
+                    </div>
+                  </div>
+                ) : selectedUserGifts.length === 0 ? (
+                  <p className="text-muted text-center py-4">Nenhum presente cadastrado.</p>
+                ) : (
+                  <div className="list-group">
+                    {selectedUserGifts.map((gift) => (
+                      <div key={gift.id} className="list-group-item">
+                        <div className="d-flex w-100 justify-content-between align-items-start">
+                          <h6 className="mb-1">🎁 {gift.name}</h6>
+                        </div>
+                        {gift.description && (
+                          <p className="mb-1 text-muted">
+                            <small>{gift.description}</small>
+                          </p>
+                        )}
+                        {gift.url && (
+                          <a
+                            href={gift.url.startsWith('http') ? gift.url : `https://${gift.url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary mt-2"
+                          >
+                            🔗 Ver produto
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowGiftsModal(false)}
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
