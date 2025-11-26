@@ -10,10 +10,18 @@ interface User {
   is_admin: boolean;
 }
 
+interface DrawResult {
+  giver_name: string;
+  receiver_name: string;
+}
+
 export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showResults, setShowResults] = useState(false);
+  const [drawResults, setDrawResults] = useState<DrawResult[]>([]);
+  const [loadingResults, setLoadingResults] = useState(false);
   const router = useRouter();
 
   // Form states
@@ -137,10 +145,77 @@ export default function AdminPage() {
       }
 
       setMessage(data.message);
+      setShowResults(false);
     } catch (err) {
       setError('Erro ao realizar sorteio');
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleClearDraw = async () => {
+    if (!confirm('Zerar o sorteio? Todos os resultados serão apagados e será necessário sortear novamente.')) {
+      return;
+    }
+
+    setFormLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const res = await fetch('/admin/api/clear-draw', {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Erro ao zerar sorteio');
+        setFormLoading(false);
+        return;
+      }
+
+      setMessage(data.message);
+      setShowResults(false);
+      setDrawResults([]);
+    } catch (err) {
+      setError('Erro ao zerar sorteio');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleViewResults = async () => {
+    if (showResults) {
+      setShowResults(false);
+      return;
+    }
+
+    setLoadingResults(true);
+    setError('');
+
+    try {
+      const res = await fetch('/admin/api/draw-results');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Erro ao buscar resultados');
+        setLoadingResults(false);
+        return;
+      }
+
+      if (data.count === 0) {
+        setError('Nenhum sorteio foi realizado ainda');
+        setLoadingResults(false);
+        return;
+      }
+
+      setDrawResults(data.results);
+      setShowResults(true);
+    } catch (err) {
+      setError('Erro ao buscar resultados');
+    } finally {
+      setLoadingResults(false);
     }
   };
 
@@ -308,23 +383,43 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Botão de sorteio */}
+          {/* Botões de sorteio */}
           <div className="card mt-4">
             <div className="card-body text-center">
-              <h5 className="card-title mb-3">Realizar Sorteio</h5>
+              <h5 className="card-title mb-3">Gerenciar Sorteio</h5>
               <p className="text-muted mb-4">
                 O sorteio distribuirá os amigos secretos entre todos os
                 usuários cadastrados. Cada pessoa tirará exatamente uma pessoa.
               </p>
-              <button
-                className="btn btn-success btn-lg"
-                onClick={handleDraw}
-                disabled={formLoading || regularUsers.length < 2}
-              >
-                {formLoading ? 'Sorteando...' : '🎲 Realizar Sorteio'}
-              </button>
+              
+              <div className="d-flex gap-2 justify-content-center flex-wrap">
+                <button
+                  className="btn btn-success btn-lg"
+                  onClick={handleDraw}
+                  disabled={formLoading || regularUsers.length < 2}
+                >
+                  {formLoading ? 'Sorteando...' : '🎲 Realizar Sorteio'}
+                </button>
+                
+                <button
+                  className="btn btn-warning btn-lg"
+                  onClick={handleClearDraw}
+                  disabled={formLoading}
+                >
+                  🔄 Zerar Sorteio
+                </button>
+                
+                <button
+                  className="btn btn-info btn-lg"
+                  onClick={handleViewResults}
+                  disabled={loadingResults}
+                >
+                  {loadingResults ? 'Carregando...' : showResults ? '🙈 Esconder Resultados' : '👁️ Ver Resultados'}
+                </button>
+              </div>
+              
               {regularUsers.length < 2 && (
-                <p className="text-danger mt-2 mb-0">
+                <p className="text-danger mt-3 mb-0">
                   <small>
                     É necessário pelo menos 2 usuários para realizar o sorteio
                   </small>
@@ -332,6 +427,42 @@ export default function AdminPage() {
               )}
             </div>
           </div>
+
+          {/* Resultados do sorteio */}
+          {showResults && drawResults.length > 0 && (
+            <div className="card mt-4">
+              <div className="card-body">
+                <h5 className="card-title mb-4">📋 Resultados do Sorteio</h5>
+                <div className="alert alert-warning" role="alert">
+                  <strong>⚠️ Atenção!</strong> Estes resultados são confidenciais. 
+                  Não compartilhe com os participantes!
+                </div>
+                <div className="table-responsive">
+                  <table className="table table-striped table-hover">
+                    <thead>
+                      <tr>
+                        <th>Quem dá</th>
+                        <th className="text-center">→</th>
+                        <th>Quem recebe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drawResults.map((result, index) => (
+                        <tr key={index}>
+                          <td><strong>{result.giver_name}</strong></td>
+                          <td className="text-center">🎁</td>
+                          <td><strong>{result.receiver_name}</strong></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-muted text-center mt-3 mb-0">
+                  <small>Total: {drawResults.length} participantes</small>
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
