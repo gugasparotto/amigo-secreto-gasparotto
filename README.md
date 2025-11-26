@@ -13,21 +13,31 @@ Sistema completo de sorteio de amigo secreto desenvolvido com Next.js 16 e Verce
 ## 📋 Funcionalidades
 
 ### 🔐 Sistema de Login
-- Login com email e senha
+- Login com email e senha (case-insensitive)
 - Redirecionamento automático:
   - Administradores → `/admin`
   - Usuários comuns → `/meu-amigo`
+- Rastreamento automático de último acesso
 
 ### 👨‍💼 Painel Administrativo (`/admin`)
 - ✅ Cadastrar usuários (nome, email, senha)
-- ✅ Listar todos os usuários
+- ✅ Listar todos os usuários com status online/offline
+- ✅ Visualizar último login de cada usuário
 - ✅ Excluir usuários
 - ✅ Realizar sorteio automático
-- ✅ Validações para garantir sorteio justo
+- ✅ Limpar sorteio para refazer
+- ✅ Visualizar resultados do sorteio (todos os pares)
+- ✅ Atualização automática a cada 30 segundos
+- ✅ Indicador visual de usuários online (últimos 5 minutos)
 
 ### 🎯 Área do Usuário (`/meu-amigo`)
 - Ver quem tirou no amigo secreto
-- Interface simples e clara
+- Ver lista de sugestões de presentes do amigo secreto
+- Cadastrar própria lista de desejos (presentes que gostaria de receber)
+- Gerenciar lista de presentes (adicionar/remover itens)
+- Adicionar nome, URL e descrição para cada presente
+- Trocar senha da própria conta
+- Ping automático para manter status online
 
 ## 🎲 Algoritmo do Sorteio
 
@@ -48,7 +58,9 @@ CREATE TABLE users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT false
+  is_admin BOOLEAN DEFAULT false,
+  last_login TIMESTAMP,
+  last_activity TIMESTAMP
 );
 ```
 
@@ -59,6 +71,18 @@ CREATE TABLE draw_results (
   giver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE(giver_id)
+);
+```
+
+### Tabela `gifts`
+```sql
+CREATE TABLE gifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  url TEXT,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -125,7 +149,9 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT false
+  is_admin BOOLEAN DEFAULT false,
+  last_login TIMESTAMP,
+  last_activity TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS draw_results (
@@ -133,6 +159,15 @@ CREATE TABLE IF NOT EXISTS draw_results (
   giver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE(giver_id)
+);
+
+CREATE TABLE IF NOT EXISTS gifts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  url TEXT,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO users (name, email, password, is_admin) 
@@ -195,12 +230,28 @@ npm run lint
 2. Cadastre todos os participantes (nome, email, senha)
 3. Quando todos estiverem cadastrados, clique em **Realizar Sorteio**
 4. Avise os participantes para fazerem login
+5. Acompanhe quem está online e quando fizeram último login
+6. Use **Ver Resultados** para consultar todos os pares (se necessário)
+7. Use **Limpar Sorteio** para desfazer e realizar novo sorteio
 
 ### Para os Participantes:
 1. Acesse o site
 2. Faça login com o email e senha fornecidos
-3. Veja quem você tirou no amigo secreto
-4. 🤫 Não conte para ninguém!
+3. Cadastre sua lista de desejos (presentes que gostaria de receber)
+4. Veja quem você tirou no amigo secreto
+5. Consulte a lista de presentes sugeridos pela pessoa que você tirou
+6. Troque sua senha se desejar
+7. 🤫 Não conte para ninguém!
+
+## 🎁 Sistema de Lista de Presentes
+
+Cada participante pode:
+- Cadastrar quantos presentes quiser na sua lista de desejos
+- Adicionar nome (obrigatório), URL do produto e descrição
+- Editar ou remover presentes da lista
+- Ver a lista de presentes de quem tirou
+
+URLs são automaticamente formatadas com `https://` se necessário.
 
 ## 🔒 Segurança
 
@@ -222,6 +273,26 @@ Em caso de dúvidas:
 1. Verifique se o banco de dados está conectado
 2. Confira as variáveis de ambiente
 3. Veja os logs de erro na Vercel (aba **Deployments** → **Function Logs**)
+
+## 🆕 Changelog
+
+### Funcionalidades Adicionadas Pós-Lançamento:
+- ✅ **Remoção de credenciais expostas** na tela de login
+- ✅ **Sistema de troca de senha** para usuários
+- ✅ **Botão Limpar Sorteio** para administradores
+- ✅ **Botão Ver Resultados** para visualizar todos os pares do sorteio
+- ✅ **Sistema de Lista de Presentes** completo:
+  - Cadastro ilimitado de presentes
+  - Campos: nome, URL, descrição
+  - Auto-formatação de URLs (adiciona https://)
+  - Links clicáveis para produtos externos
+- ✅ **Login case-insensitive** (aceita maiúsculas/minúsculas)
+- ✅ **Rastreamento de atividade de usuários**:
+  - Timestamp de último login
+  - Indicador de status online/offline
+  - Atualização automática a cada 30 segundos no painel admin
+  - Sistema de ping para manter usuários online
+  - Badge visual verde para usuários ativos nos últimos 5 minutos
 
 ---
 

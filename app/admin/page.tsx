@@ -11,6 +11,7 @@ interface User {
   last_login: string | null;
   last_activity: string | null;
   is_online: boolean;
+  gifts_count: number;
 }
 
 interface DrawResult {
@@ -389,6 +390,7 @@ export default function AdminPage() {
                         <th>Email</th>
                         <th>Status</th>
                         <th>Último Login</th>
+                        <th>Presentes</th>
                         <th style={{ width: '100px' }}>Ações</th>
                       </tr>
                     </thead>
@@ -416,6 +418,15 @@ export default function AdminPage() {
                             <small className="text-muted">
                               {formatLastLogin(user.last_login)}
                             </small>
+                          </td>
+                          <td>
+                            {user.gifts_count > 0 ? (
+                              <span className="badge bg-info text-dark">
+                                🎁 {user.gifts_count}
+                              </span>
+                            ) : (
+                              <small className="text-muted">Nenhum</small>
+                            )}
                           </td>
                           <td>
                             <button

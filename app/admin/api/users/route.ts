@@ -8,18 +8,21 @@ export async function GET() {
 
     const result = await sql`
       SELECT 
-        id, 
-        name, 
-        email, 
-        is_admin,
-        last_login,
-        last_activity,
+        u.id, 
+        u.name, 
+        u.email, 
+        u.is_admin,
+        u.last_login,
+        u.last_activity,
         CASE 
-          WHEN last_activity > CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN true
+          WHEN u.last_activity > CURRENT_TIMESTAMP - INTERVAL '5 minutes' THEN true
           ELSE false
-        END as is_online
-      FROM users
-      ORDER BY is_admin DESC, name ASC
+        END as is_online,
+        COUNT(g.id) as gifts_count
+      FROM users u
+      LEFT JOIN gifts g ON u.id = g.user_id
+      GROUP BY u.id, u.name, u.email, u.is_admin, u.last_login, u.last_activity
+      ORDER BY u.is_admin DESC, u.name ASC
     `;
 
     return NextResponse.json({ users: result.rows });
