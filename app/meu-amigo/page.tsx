@@ -276,7 +276,7 @@ export default function MeuAmigoPage() {
                     if (!showMyGifts) loadMyGifts();
                   }}
                 >
-                  {showMyGifts ? '🙈 Esconder' : '🎁 Meus Presentes'}
+                  {showMyGifts ? '🙈 Esconder' : '🎁 Adicionar Presentes'}
                 </button>
                 <button
                   className="btn btn-outline-primary btn-sm"
@@ -295,7 +295,7 @@ export default function MeuAmigoPage() {
               {showMyGifts && (
                 <div className="mt-4">
                   <hr />
-                  <h6 className="mb-3">🎁 Meus Presentes</h6>
+                  <h6 className="mb-3">🎁 Adicionar Presentes</h6>
                   
                   {giftError && (
                     <div className="alert alert-danger alert-sm mb-2">{giftError}</div>
@@ -318,7 +318,7 @@ export default function MeuAmigoPage() {
                     </div>
                     <div className="mb-2">
                       <input
-                        type="url"
+                        type="text"
                         className="form-control form-control-sm"
                         placeholder="Link (opcional)"
                         value={giftUrl}
