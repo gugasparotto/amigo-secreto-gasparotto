@@ -232,7 +232,7 @@ export default function MeuAmigoPage() {
                     <h2 className="display-4 mb-0">{secretFriend}</h2>
                   </div>
                   
-                  {secretFriendGifts.length > 0 && (
+                  {secretFriendGifts.length > 0 ? (
                     <div className="alert alert-info mb-4">
                       <h6 className="mb-3">🎁 Sugestões de presentes:</h6>
                       <div className="list-group">
@@ -244,7 +244,7 @@ export default function MeuAmigoPage() {
                             )}
                             {gift.url && (
                               <a
-                                href={gift.url}
+                                href={gift.url.startsWith('http') ? gift.url : `https://${gift.url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-sm btn-outline-primary mt-1"
@@ -255,6 +255,13 @@ export default function MeuAmigoPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  ) : (
+                    <div className="alert alert-warning mb-4">
+                      <p className="mb-0 text-center">
+                        <strong>{secretFriend}</strong> ainda não cadastrou sugestões de presentes. 
+                        Que tal usar sua criatividade? 🎨
+                      </p>
                     </div>
                   )}
                   
@@ -345,6 +352,9 @@ export default function MeuAmigoPage() {
                     </button>
                   </form>
 
+                  <hr className="my-3" />
+                  <h6 className="mb-3 text-muted">📝 Minha Lista de Desejos</h6>
+
                   {myGifts.length > 0 ? (
                     <div className="list-group">
                       {myGifts.map((gift) => (
@@ -356,7 +366,11 @@ export default function MeuAmigoPage() {
                             )}
                             {gift.url && (
                               <small>
-                                <a href={gift.url} target="_blank" rel="noopener noreferrer">
+                                <a 
+                                  href={gift.url.startsWith('http') ? gift.url : `https://${gift.url}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
                                   🔗 Link
                                 </a>
                               </small>
