@@ -9,6 +9,13 @@ export default function MeuAmigoPage() {
   const [secretFriend, setSecretFriend] = useState<string | null>(null);
   const [hasMatch, setHasMatch] = useState(false);
   const [message, setMessage] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,6 +67,53 @@ export default function MeuAmigoPage() {
     router.push('/');
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 3) {
+      setPasswordError('A nova senha deve ter pelo menos 3 caracteres');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const res = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPasswordError(data.error || 'Erro ao alterar senha');
+        setChangingPassword(false);
+        return;
+      }
+
+      setPasswordSuccess('Senha alterada com sucesso!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setPasswordSuccess('');
+      }, 2000);
+    } catch (err) {
+      setPasswordError('Erro ao conectar ao servidor');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -100,12 +154,94 @@ export default function MeuAmigoPage() {
                 </div>
               )}
 
-              <button
-                className="btn btn-outline-secondary btn-sm"
-                onClick={handleLogout}
-              >
-                Sair
-              </button>
+              <div className="d-flex gap-2 justify-content-center">
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  {showChangePassword ? 'Cancelar' : 'Trocar Senha'}
+                </button>
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleLogout}
+                >
+                  Sair
+                </button>
+              </div>
+
+              {showChangePassword && (
+                <div className="mt-4">
+                  <hr />
+                  <h6 className="mb-3">Alterar Senha</h6>
+
+                  {passwordError && (
+                    <div className="alert alert-danger alert-sm" role="alert">
+                      {passwordError}
+                    </div>
+                  )}
+
+                  {passwordSuccess && (
+                    <div className="alert alert-success alert-sm" role="alert">
+                      {passwordSuccess}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleChangePassword}>
+                    <div className="mb-3">
+                      <label htmlFor="currentPassword" className="form-label form-label-sm">
+                        Senha Atual
+                      </label>
+                      <input
+                        type="password"
+                        className="form-control form-control-sm"
+                        id="currentPassword"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                        disabled={changingPassword}
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="newPassword" className="form-label form-label-sm">
+                        Nova Senha
+                      </label>
+                      <input
+                        type="password"
+                        className="form-control form-control-sm"
+                        id="newPassword"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        disabled={changingPassword}
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="confirmPassword" className="form-label form-label-sm">
+                        Confirmar Nova Senha
+                      </label>
+                      <input
+                        type="password"
+                        className="form-control form-control-sm"
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        disabled={changingPassword}
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-sm w-100"
+                      disabled={changingPassword}
+                    >
+                      {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
 
