@@ -99,22 +99,6 @@ cd amigo-secreto-gasparotto
 npm install
 ```
 
-### 3. Configure as variáveis de ambiente
-Crie o arquivo `.env.local` (já existe um exemplo):
-```env
-# Após criar o banco na Vercel, copie as variáveis aqui
-POSTGRES_URL=""
-POSTGRES_PRISMA_URL=""
-POSTGRES_URL_NON_POOLING=""
-POSTGRES_USER=""
-POSTGRES_HOST=""
-POSTGRES_PASSWORD=""
-POSTGRES_DATABASE=""
-
-# Secret para JWT (mude em produção)
-JWT_SECRET="seu-secret-aleatorio-aqui"
-```
-
 ### 4. Execute o projeto localmente
 ```bash
 npm run dev
@@ -184,22 +168,10 @@ ON CONFLICT (email) DO NOTHING;
    - **Build Command:** `npm run build`
    - **Output Directory:** `.next`
 
-### Passo 5: Configure as variáveis de ambiente
-1. Na página de configuração do projeto, vá em **Environment Variables**
-2. No banco de dados criado, vá em **Settings** → **.env.local**
-3. Copie todas as variáveis `POSTGRES_*`
-4. Cole no projeto da Vercel
-5. Adicione também:
-   ```
-   JWT_SECRET=sua-chave-secreta-aleatoria-aqui
-   ```
-6. Clique em **Deploy**
-
 ### Passo 6: Conecte o banco ao projeto
 1. Volte ao banco de dados na Vercel
 2. Vá em **Settings** → **Connected Projects**
 3. Conecte ao projeto que você criou
-4. As variáveis serão sincronizadas automaticamente
 
 ### Passo 7: Teste o site
 1. Aguarde o deploy finalizar
@@ -274,26 +246,5 @@ Em caso de dúvidas:
 2. Confira as variáveis de ambiente
 3. Veja os logs de erro na Vercel (aba **Deployments** → **Function Logs**)
 
-## 🆕 Changelog
-
-### Funcionalidades Adicionadas Pós-Lançamento:
-- ✅ **Remoção de credenciais expostas** na tela de login
-- ✅ **Sistema de troca de senha** para usuários
-- ✅ **Botão Limpar Sorteio** para administradores
-- ✅ **Botão Ver Resultados** para visualizar todos os pares do sorteio
-- ✅ **Sistema de Lista de Presentes** completo:
-  - Cadastro ilimitado de presentes
-  - Campos: nome, URL, descrição
-  - Auto-formatação de URLs (adiciona https://)
-  - Links clicáveis para produtos externos
-- ✅ **Login case-insensitive** (aceita maiúsculas/minúsculas)
-- ✅ **Rastreamento de atividade de usuários**:
-  - Timestamp de último login
-  - Indicador de status online/offline
-  - Atualização automática a cada 30 segundos no painel admin
-  - Sistema de ping para manter usuários online
-  - Badge visual verde para usuários ativos nos últimos 5 minutos
 
 ---
-
-Feito com ❤️ para a família Gasparotto 🎄
