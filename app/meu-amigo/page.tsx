@@ -17,6 +17,9 @@ export default function MeuAmigoPage() {
   const [secretFriendGifts, setSecretFriendGifts] = useState<Gift[]>([]);
   const [hasMatch, setHasMatch] = useState(false);
   const [message, setMessage] = useState('');
+  const [showEnvelope, setShowEnvelope] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [revealName, setRevealName] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showMyGifts, setShowMyGifts] = useState(false);
   const [myGifts, setMyGifts] = useState<Gift[]>([]);
@@ -64,13 +67,13 @@ export default function MeuAmigoPage() {
       }
 
       setCurrentUser(data.user);
-      await loadSecretFriend();
+      await loadSecretFriend(data.user.id);
     } catch (err) {
       router.push('/');
     }
   };
 
-  const loadSecretFriend = async () => {
+  const loadSecretFriend = async (userId: string) => {
     try {
       const res = await fetch('/api/secret-friend');
       const data = await res.json();
@@ -79,6 +82,16 @@ export default function MeuAmigoPage() {
         setHasMatch(true);
         setSecretFriend(data.secretFriend);
         setSecretFriendGifts(data.gifts || []);
+        
+        // Verificar se é a primeira vez vendo o resultado (usando userId do parâmetro)
+        const hasSeenKey = `seen_secret_friend_${userId}`;
+        const hasSeen = localStorage.getItem(hasSeenKey);
+        
+        if (!hasSeen) {
+          // Primeira vez - mostrar animação do envelope
+          setShowEnvelope(true);
+          localStorage.setItem(hasSeenKey, 'true');
+        }
       } else {
         setMessage(data.message || 'O sorteio ainda não foi realizado');
       }
@@ -97,6 +110,16 @@ export default function MeuAmigoPage() {
     } catch (err) {
       console.error('Erro ao carregar presentes:', err);
     }
+  };
+
+  const handleOpenEnvelope = () => {
+    setEnvelopeOpened(true);
+    setTimeout(() => {
+      setRevealName(true);
+    }, 800);
+    setTimeout(() => {
+      setShowEnvelope(false);
+    }, 3500);
   };
 
   const handleLogout = async () => {
@@ -222,6 +245,168 @@ export default function MeuAmigoPage() {
 
   return (
     <div className="container">
+      {/* Modal de Envelope */}
+      {showEnvelope && (
+        <div 
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.95)', 
+            zIndex: 9999,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div className="text-center">
+            <div 
+              className={`envelope-container ${envelopeOpened ? 'opened' : ''}`}
+              onClick={!envelopeOpened ? handleOpenEnvelope : undefined}
+              style={{ cursor: envelopeOpened ? 'default' : 'pointer' }}
+            >
+              {/* Envelope */}
+              <div className="envelope">
+                <div className="envelope-flap"></div>
+                <div className="envelope-body"></div>
+              </div>
+              
+              {/* Carta saindo do envelope */}
+              <div className="letter">
+                <div className="letter-content">
+                  {revealName ? (
+                    <>
+                      <h3 className="mb-3" style={{ color: '#333' }}>Você tirou:</h3>
+                      <h1 className="display-3 fw-bold" style={{ color: '#d63384' }}>
+                        {secretFriend}
+                      </h1>
+                      <p className="mt-3" style={{ color: '#666' }}>🎁✨</p>
+                    </>
+                  ) : (
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Revelando...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {!envelopeOpened && (
+              <p className="text-white mt-4 animate-pulse">
+                ✨ Clique no envelope para revelar seu amigo secreto ✨
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .envelope-container {
+          position: relative;
+          width: 90vw;
+          max-width: 500px;
+          height: 320px;
+          margin: 0 auto;
+        }
+
+        .envelope {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.3s ease;
+        }
+
+        .envelope-container:not(.opened):hover .envelope {
+          transform: scale(1.05);
+        }
+
+        .envelope-body {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 60%;
+          background: linear-gradient(to bottom, #fff, #f8f9fa);
+          border: 3px solid #d63384;
+          border-radius: 0 0 10px 10px;
+          box-shadow: 0 10px 30px rgba(214, 51, 132, 0.3);
+        }
+
+        .envelope-flap {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 50%;
+          background: linear-gradient(to bottom, #d63384, #c71f6f);
+          clip-path: polygon(0 0, 50% 100%, 100% 0);
+          border-radius: 10px 10px 0 0;
+          transform-origin: top;
+          transition: transform 0.8s ease, opacity 0.6s ease 0.8s;
+          z-index: 2;
+          box-shadow: 0 5px 20px rgba(214, 51, 132, 0.4);
+        }
+
+        .envelope-container.opened .envelope-flap {
+          transform: rotateX(180deg);
+          opacity: 0;
+        }
+
+        .letter {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, 0%);
+          width: 90%;
+          height: 180%;
+          background: linear-gradient(to bottom, #fff, #fffef5);
+          border: 2px solid #d63384;
+          border-radius: 10px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+          transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          z-index: 1;
+          opacity: 0;
+        }
+
+        .envelope-container.opened .letter {
+          transform: translate(-50%, -60%);
+          opacity: 1;
+        }
+
+        .letter-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          padding: 30px 20px;
+          text-align: center;
+        }
+
+        .letter-content h3 {
+          font-size: clamp(1.2rem, 4vw, 1.5rem);
+        }
+
+        .letter-content h1 {
+          font-size: clamp(2rem, 8vw, 3.5rem);
+          word-wrap: break-word;
+          max-width: 100%;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .animate-pulse {
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+
+        .envelope-container:not(.opened) {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
+
       <div className="row justify-content-center align-items-center min-vh-100">
         <div className="col-md-6 col-lg-5">
           <div className="card">
