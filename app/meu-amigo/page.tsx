@@ -39,6 +39,13 @@ export default function MeuAmigoPage() {
 
   useEffect(() => {
     checkAuth();
+    
+    // Ping a cada 2 minutos para manter status online
+    const interval = setInterval(() => {
+      fetch('/api/ping', { method: 'POST' });
+    }, 120000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const checkAuth = async () => {

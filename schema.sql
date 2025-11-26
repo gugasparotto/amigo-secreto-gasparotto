@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT false
+  is_admin BOOLEAN DEFAULT false,
+  last_login TIMESTAMP,
+  last_activity TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS draw_results (

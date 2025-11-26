@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
     const user = result.rows[0];
     const token = createToken(user.id);
 
+    // Atualizar last_login e last_activity
+    await sql`
+      UPDATE users 
+      SET last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP
+      WHERE id = ${user.id}
+    `;
+
     // Criar cookie de autenticação
     const cookieStore = await cookies();
     cookieStore.set('auth_token', token, {

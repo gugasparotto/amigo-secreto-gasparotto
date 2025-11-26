@@ -8,6 +8,9 @@ interface User {
   name: string;
   email: string;
   is_admin: boolean;
+  last_login: string | null;
+  last_activity: string | null;
+  is_online: boolean;
 }
 
 interface DrawResult {
@@ -35,6 +38,10 @@ export default function AdminPage() {
   useEffect(() => {
     checkAuth();
     loadUsers();
+    
+    // Recarregar usuários a cada 30 segundos para atualizar status online
+    const interval = setInterval(loadUsers, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const checkAuth = async () => {
@@ -224,6 +231,28 @@ export default function AdminPage() {
     router.push('/');
   };
 
+  const formatLastLogin = (lastLogin: string | null) => {
+    if (!lastLogin) return 'Nunca';
+    
+    const date = new Date(lastLogin);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Agora';
+    if (diffMins < 60) return `${diffMins}m atrás`;
+    if (diffHours < 24) return `${diffHours}h atrás`;
+    if (diffDays < 7) return `${diffDays}d atrás`;
+    
+    return date.toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -358,14 +387,36 @@ export default function AdminPage() {
                       <tr>
                         <th>Nome</th>
                         <th>Email</th>
+                        <th>Status</th>
+                        <th>Último Login</th>
                         <th style={{ width: '100px' }}>Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {regularUsers.map((user) => (
                         <tr key={user.id}>
-                          <td>{user.name}</td>
+                          <td>
+                            {user.name}
+                            {user.is_online && (
+                              <span className="badge bg-success ms-2" style={{ fontSize: '0.7rem' }}>
+                                Online
+                              </span>
+                            )}
+                          </td>
                           <td>{user.email}</td>
+                          <td>
+                            <span 
+                              className={`badge ${user.is_online ? 'bg-success' : 'bg-secondary'}`}
+                              style={{ fontSize: '0.7rem' }}
+                            >
+                              {user.is_online ? '🟢 Ativo' : '⚫ Offline'}
+                            </span>
+                          </td>
+                          <td>
+                            <small className="text-muted">
+                              {formatLastLogin(user.last_login)}
+                            </small>
+                          </td>
                           <td>
                             <button
                               className="btn btn-sm btn-danger"
