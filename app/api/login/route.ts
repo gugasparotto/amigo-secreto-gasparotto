@@ -7,11 +7,11 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Buscar usuário no banco
+    // Buscar usuário no banco (email case-insensitive)
     const result = await sql`
       SELECT id, name, email, is_admin 
       FROM users 
-      WHERE email = ${email} AND password = ${password}
+      WHERE LOWER(email) = LOWER(${email}) AND password = ${password}
     `;
 
     if (result.rows.length === 0) {
