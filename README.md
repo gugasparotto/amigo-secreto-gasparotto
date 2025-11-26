@@ -109,7 +109,7 @@ Acesse: `http://localhost:3000`
 ### Passo 2: Crie o banco de dados Postgres
 1. No dashboard da Vercel, vá em **Storage**
 2. Clique em **Create Database**
-3. Escolha **Postgres**
+3. Escolha **Neon** (Serverless Postgres)
 4. Escolha a região mais próxima
 5. Dê um nome (ex: `amigo-secreto-db`)
 6. Clique em **Create**

@@ -21,18 +21,21 @@ git push -u origin main
 ### 2️⃣ Criar Banco de Dados na Vercel
 1. Acesse https://vercel.com/dashboard
 2. Vá em **Storage** → **Create Database**
-3. Escolha **Postgres**
+3. Escolha **Neon** (Serverless Postgres)
 4. Nome: `amigo-secreto-db`
 5. Região: escolha a mais próxima
 6. Clique em **Create**
 
-### 3️⃣ Executar Script SQL
-No banco criado:
-1. Vá em **Data** → **Query**
-2. Cole o conteúdo de `schema.sql`
-3. Clique em **Run Query**
-4. Verifique se as 2 tabelas foram criadas
-5. Verifique se o usuário admin foi criado
+### 3️⃣ Configurar Banco de Dados
+Após conectar o banco ao projeto:
+1. Faça o deploy do projeto (passo 4)
+2. Após o deploy, acesse: `https://SEU-PROJETO.vercel.app/api/setup`
+3. Você verá uma mensagem de sucesso
+4. **IMPORTANTE**: Delete o arquivo `app/api/setup/route.ts` e faça novo deploy
+
+**OU** execute o SQL manualmente:
+1. Clique em **Open in Neon** no banco
+2. No console do Neon, execute o conteúdo de `schema.sql`
 
 ### 4️⃣ Deploy do Projeto
 1. Dashboard Vercel → **Add New** → **Project**
@@ -44,8 +47,10 @@ No banco criado:
    - Install Command: `npm install`
 
 ### 5️⃣ Configurar Variáveis de Ambiente
-Na página do projeto:
-1. Vá em **Settings** → **Environment Variables**
+**Se você clicou em "Connect Project"**, as variáveis já foram configuradas automaticamente!
+
+Caso contrário:
+1. Na página do projeto → **Settings** → **Environment Variables**
 2. Volte ao banco de dados
 3. Copie todas as variáveis da aba **.env.local**
 4. Cole no projeto
