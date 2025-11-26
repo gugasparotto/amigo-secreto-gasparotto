@@ -3,19 +3,38 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Gift {
+  id: string;
+  name: string;
+  url: string | null;
+  description: string | null;
+}
+
 export default function MeuAmigoPage() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [secretFriend, setSecretFriend] = useState<string | null>(null);
+  const [secretFriendGifts, setSecretFriendGifts] = useState<Gift[]>([]);
   const [hasMatch, setHasMatch] = useState(false);
   const [message, setMessage] = useState('');
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showMyGifts, setShowMyGifts] = useState(false);
+  const [myGifts, setMyGifts] = useState<Gift[]>([]);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Form de presente
+  const [giftName, setGiftName] = useState('');
+  const [giftUrl, setGiftUrl] = useState('');
+  const [giftDescription, setGiftDescription] = useState('');
+  const [giftError, setGiftError] = useState('');
+  const [giftSuccess, setGiftSuccess] = useState('');
+  const [savingGift, setSavingGift] = useState(false);
+  
   const router = useRouter();
 
   useEffect(() => {
@@ -52,6 +71,7 @@ export default function MeuAmigoPage() {
       if (data.hasMatch) {
         setHasMatch(true);
         setSecretFriend(data.secretFriend);
+        setSecretFriendGifts(data.gifts || []);
       } else {
         setMessage(data.message || 'O sorteio ainda não foi realizado');
       }
@@ -59,6 +79,16 @@ export default function MeuAmigoPage() {
       setMessage('Erro ao carregar informações');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMyGifts = async () => {
+    try {
+      const res = await fetch('/api/gifts');
+      const data = await res.json();
+      setMyGifts(data.gifts || []);
+    } catch (err) {
+      console.error('Erro ao carregar presentes:', err);
     }
   };
 
@@ -114,6 +144,63 @@ export default function MeuAmigoPage() {
     }
   };
 
+  const handleAddGift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGiftError('');
+    setGiftSuccess('');
+    setSavingGift(true);
+
+    try {
+      const res = await fetch('/api/gifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: giftName,
+          url: giftUrl,
+          description: giftDescription,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setGiftError(data.error || 'Erro ao adicionar presente');
+        setSavingGift(false);
+        return;
+      }
+
+      setGiftSuccess('Presente adicionado!');
+      setGiftName('');
+      setGiftUrl('');
+      setGiftDescription('');
+      loadMyGifts();
+      
+      setTimeout(() => setGiftSuccess(''), 2000);
+    } catch (err) {
+      setGiftError('Erro ao conectar ao servidor');
+    } finally {
+      setSavingGift(false);
+    }
+  };
+
+  const handleDeleteGift = async (giftId: string) => {
+    if (!confirm('Deseja remover este presente da lista?')) return;
+
+    try {
+      const res = await fetch(`/api/gifts?id=${giftId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        loadMyGifts();
+        setGiftSuccess('Presente removido!');
+        setTimeout(() => setGiftSuccess(''), 2000);
+      }
+    } catch (err) {
+      setGiftError('Erro ao remover presente');
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -144,6 +231,33 @@ export default function MeuAmigoPage() {
                     <h5 className="mb-3">Você tirou:</h5>
                     <h2 className="display-4 mb-0">{secretFriend}</h2>
                   </div>
+                  
+                  {secretFriendGifts.length > 0 && (
+                    <div className="alert alert-info mb-4">
+                      <h6 className="mb-3">🎁 Sugestões de presentes:</h6>
+                      <div className="list-group">
+                        {secretFriendGifts.map((gift) => (
+                          <div key={gift.id} className="list-group-item">
+                            <h6 className="mb-1">{gift.name}</h6>
+                            {gift.description && (
+                              <p className="mb-1 text-muted small">{gift.description}</p>
+                            )}
+                            {gift.url && (
+                              <a
+                                href={gift.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-primary mt-1"
+                              >
+                                Ver link
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <p className="text-muted mb-4">
                     🤫 Lembre-se: isso é um segredo!
                   </p>
@@ -154,7 +268,16 @@ export default function MeuAmigoPage() {
                 </div>
               )}
 
-              <div className="d-flex gap-2 justify-content-center">
+              <div className="d-flex gap-2 justify-content-center mb-3">
+                <button
+                  className="btn btn-outline-success btn-sm"
+                  onClick={() => {
+                    setShowMyGifts(!showMyGifts);
+                    if (!showMyGifts) loadMyGifts();
+                  }}
+                >
+                  {showMyGifts ? '🙈 Esconder' : '🎁 Meus Presentes'}
+                </button>
                 <button
                   className="btn btn-outline-primary btn-sm"
                   onClick={() => setShowChangePassword(!showChangePassword)}
@@ -168,6 +291,93 @@ export default function MeuAmigoPage() {
                   Sair
                 </button>
               </div>
+
+              {showMyGifts && (
+                <div className="mt-4">
+                  <hr />
+                  <h6 className="mb-3">🎁 Meus Presentes</h6>
+                  
+                  {giftError && (
+                    <div className="alert alert-danger alert-sm mb-2">{giftError}</div>
+                  )}
+                  {giftSuccess && (
+                    <div className="alert alert-success alert-sm mb-2">{giftSuccess}</div>
+                  )}
+
+                  <form onSubmit={handleAddGift} className="mb-3">
+                    <div className="mb-2">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder="Nome do presente *"
+                        value={giftName}
+                        onChange={(e) => setGiftName(e.target.value)}
+                        required
+                        disabled={savingGift}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <input
+                        type="url"
+                        className="form-control form-control-sm"
+                        placeholder="Link (opcional)"
+                        value={giftUrl}
+                        onChange={(e) => setGiftUrl(e.target.value)}
+                        disabled={savingGift}
+                      />
+                    </div>
+                    <div className="mb-2">
+                      <textarea
+                        className="form-control form-control-sm"
+                        placeholder="Descrição (opcional)"
+                        rows={2}
+                        value={giftDescription}
+                        onChange={(e) => setGiftDescription(e.target.value)}
+                        disabled={savingGift}
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="btn btn-success btn-sm w-100"
+                      disabled={savingGift}
+                    >
+                      {savingGift ? 'Adicionando...' : '+ Adicionar'}
+                    </button>
+                  </form>
+
+                  {myGifts.length > 0 ? (
+                    <div className="list-group">
+                      {myGifts.map((gift) => (
+                        <div key={gift.id} className="list-group-item d-flex justify-content-between align-items-start">
+                          <div className="flex-grow-1">
+                            <strong>{gift.name}</strong>
+                            {gift.description && (
+                              <p className="mb-0 text-muted small">{gift.description}</p>
+                            )}
+                            {gift.url && (
+                              <small>
+                                <a href={gift.url} target="_blank" rel="noopener noreferrer">
+                                  🔗 Link
+                                </a>
+                              </small>
+                            )}
+                          </div>
+                          <button
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleDeleteGift(gift.id)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted text-center small">
+                      Nenhum presente cadastrado ainda
+                    </p>
+                  )}
+                </div>
+              )}
 
               {showChangePassword && (
                 <div className="mt-4">
