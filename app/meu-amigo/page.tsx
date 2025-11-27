@@ -20,6 +20,7 @@ export default function MeuAmigoPage() {
   const [showEnvelope, setShowEnvelope] = useState(false);
   const [envelopeOpened, setEnvelopeOpened] = useState(false);
   const [revealName, setRevealName] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showMyGifts, setShowMyGifts] = useState(false);
   const [myGifts, setMyGifts] = useState<Gift[]>([]);
@@ -119,7 +120,16 @@ export default function MeuAmigoPage() {
     }, 800);
     setTimeout(() => {
       setShowEnvelope(false);
-    }, 3500);
+      setEnvelopeOpened(false);
+      setRevealName(false);
+    }, 4800); // 800ms (animação) + 4000ms (visualização)
+  };
+
+  const handleShowSecretFriend = () => {
+    setShowNameModal(true);
+    setTimeout(() => {
+      setShowNameModal(false);
+    }, 4000);
   };
 
   const handleLogout = async () => {
@@ -405,7 +415,55 @@ export default function MeuAmigoPage() {
         .envelope-container:not(.opened) {
           animation: float 3s ease-in-out infinite;
         }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        .name-reveal {
+          animation: fadeIn 0.5s ease-out;
+        }
       `}</style>
+
+      {/* Modal de Revelação do Nome */}
+      {showNameModal && (
+        <div 
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.95)', 
+            zIndex: 9999,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div className="text-center name-reveal">
+            <div 
+              className="p-5 rounded-4" 
+              style={{ 
+                background: 'linear-gradient(135deg, #d63384 0%, #c71f6f 100%)',
+                maxWidth: '90vw',
+                boxShadow: '0 20px 60px rgba(214, 51, 132, 0.5)'
+              }}
+            >
+              <h3 className="text-white mb-4" style={{ fontSize: 'clamp(1.2rem, 4vw, 1.8rem)' }}>
+                🎁 Você tirou:
+              </h3>
+              <h1 
+                className="text-white fw-bold mb-4" 
+                style={{ 
+                  fontSize: 'clamp(2.5rem, 10vw, 5rem)',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+                }}
+              >
+                {secretFriend}
+              </h1>
+              <p className="text-white-50">
+                <small>Esta mensagem desaparecerá em alguns segundos...</small>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="row justify-content-center align-items-center min-vh-100">
         <div className="col-md-6 col-lg-5">
@@ -419,14 +477,24 @@ export default function MeuAmigoPage() {
 
               {hasMatch ? (
                 <>
-                  <div className="alert alert-success mb-4" role="alert">
-                    <h5 className="mb-3">Você tirou:</h5>
-                    <h2 className="display-4 mb-0">{secretFriend}</h2>
+                  <div className="alert alert-warning mb-4" role="alert">
+                    <h5 className="mb-3">🎁 Seu amigo secreto já foi sorteado!</h5>
+                    <p className="mb-3">
+                      <small>
+                        🔒 Por privacidade, o nome só aparecerá por 6 segundos ao clicar no botão abaixo.
+                      </small>
+                    </p>
+                    <button
+                      className="btn btn-success btn-lg"
+                      onClick={handleShowSecretFriend}
+                    >
+                      🎭 Mostrar quem é meu amigo secreto
+                    </button>
                   </div>
                   
                   {secretFriendGifts.length > 0 ? (
                     <div className="alert alert-info mb-4">
-                      <h6 className="mb-3">🎁 Sugestões de presentes:</h6>
+                      <h6 className="mb-3">🎁 Sugestões de presentes do seu amigo secreto:</h6>
                       <div className="list-group">
                         {secretFriendGifts.map((gift) => (
                           <div key={gift.id} className="list-group-item">
