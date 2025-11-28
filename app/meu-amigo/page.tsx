@@ -519,7 +519,7 @@ export default function MeuAmigoPage() {
                   ) : (
                     <div className="alert alert-warning mb-4">
                       <p className="mb-0 text-center">
-                        <strong>{secretFriend}</strong> ainda não cadastrou sugestões de presentes. 
+                        Seu amigo secreto ainda não cadastrou sugestões de presentes. 
                         Que tal usar sua criatividade? 🎨
                       </p>
                     </div>
