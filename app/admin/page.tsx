@@ -37,6 +37,13 @@ export default function AdminPage() {
   const [selectedUserGifts, setSelectedUserGifts] = useState<Gift[]>([]);
   const [selectedUserName, setSelectedUserName] = useState('');
   const [loadingGifts, setLoadingGifts] = useState(false);
+  const [showAddGiftModal, setShowAddGiftModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [giftName, setGiftName] = useState('');
+  const [giftUrl, setGiftUrl] = useState('');
+  const [giftDescription, setGiftDescription] = useState('');
+  const [savingGift, setSavingGift] = useState(false);
+  const [giftError, setGiftError] = useState('');
   const router = useRouter();
 
   // Form states
@@ -255,6 +262,54 @@ export default function AdminPage() {
     }
   };
 
+  const handleOpenAddGift = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setShowAddGiftModal(true);
+    setGiftName('');
+    setGiftUrl('');
+    setGiftDescription('');
+    setGiftError('');
+  };
+
+  const handleAddGiftForUser = async (e: FormEvent) => {
+    e.preventDefault();
+    setGiftError('');
+    setSavingGift(true);
+
+    try {
+      const res = await fetch('/admin/api/add-gift', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUserId,
+          name: giftName,
+          url: giftUrl,
+          description: giftDescription,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setGiftError(data.error || 'Erro ao adicionar presente');
+        setSavingGift(false);
+        return;
+      }
+
+      setMessage(`Presente adicionado para ${selectedUserName}!`);
+      setShowAddGiftModal(false);
+      setGiftName('');
+      setGiftUrl('');
+      setGiftDescription('');
+      loadUsers(); // Atualizar contagem de presentes
+    } catch (err) {
+      setGiftError('Erro ao conectar ao servidor');
+    } finally {
+      setSavingGift(false);
+    }
+  };
+
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/');
@@ -462,12 +517,21 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => handleDeleteUser(user.id)}
-                            >
-                              Excluir
-                            </button>
+                            <div className="d-flex gap-1">
+                              <button
+                                className="btn btn-sm btn-primary"
+                                onClick={() => handleOpenAddGift(user.id, user.name)}
+                                title="Adicionar presente"
+                              >
+                                🎁
+                              </button>
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                Excluir
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -619,6 +683,96 @@ export default function AdminPage() {
                   Fechar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Adicionar Presente */}
+      {showAddGiftModal && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">🎁 Adicionar Presente para {selectedUserName}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddGiftModal(false)}
+                ></button>
+              </div>
+              <form onSubmit={handleAddGiftForUser}>
+                <div className="modal-body">
+                  {giftError && (
+                    <div className="alert alert-danger" role="alert">
+                      {giftError}
+                    </div>
+                  )}
+
+                  <div className="mb-3">
+                    <label htmlFor="giftName" className="form-label">
+                      Nome do Presente *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="giftName"
+                      value={giftName}
+                      onChange={(e) => setGiftName(e.target.value)}
+                      required
+                      disabled={savingGift}
+                      placeholder="Ex: Livro, Jogo, etc."
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="giftUrl" className="form-label">
+                      URL/Link (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="giftUrl"
+                      value={giftUrl}
+                      onChange={(e) => setGiftUrl(e.target.value)}
+                      disabled={savingGift}
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="giftDescription" className="form-label">
+                      Descrição (opcional)
+                    </label>
+                    <textarea
+                      className="form-control"
+                      id="giftDescription"
+                      rows={3}
+                      value={giftDescription}
+                      onChange={(e) => setGiftDescription(e.target.value)}
+                      disabled={savingGift}
+                      placeholder="Detalhes sobre o presente..."
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowAddGiftModal(false)}
+                    disabled={savingGift}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={savingGift}
+                  >
+                    {savingGift ? 'Adicionando...' : 'Adicionar Presente'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
